@@ -1,4 +1,4 @@
-//  Multi-Cut Box current implementation as of 6/6/16
+//  Multi-Cut Box current implementation as of 6/6/16 *Updated 8/11/16*
 //  By Noah Biniek (binie005@umn.edu)
 #include <AltSoftSerial.h>
 #include <SPI.h>
@@ -100,8 +100,8 @@ void IndicatorLED::pullCheck(){
 
 
 const uint8_t led = 13;
-const uint8_t burnerA = 10, burnerB = 11, burnerC = 12, burnerD = 9;
-const uint8_t pullA = 6, pullB = 8, pullC = 7, pullD = 5;
+const uint8_t burnerA = 9, burnerB = 5, burnerC = 7, burnerD = 11;
+const uint8_t pullA = 8, pullB = 4, pullC = 6, pullD = 10;
 const int chipSelect = 53;
 
 const long xbeeBaud = 9600;
@@ -110,11 +110,9 @@ const long gpsBaud = 9600;
 AltSoftSerial xBee; // TX:46, RX:48, PWM Unusuable:44,45 **These pins cannot be changed - this is built into the AltSoftSerial Library**
                     // If using Arduino Mega with SparkFun XBee shield, make sure switch is set to DLINE (not UART).
                     // This tells the XBee to communicate with pins 2 and 3 which must be jumped to pins 48 and 46 respectively.
-                    // Make sure pins 2 and 3 are not inserted into the GPS shield (bend them).
-HardwareSerial s = Serial1;
-
-//SoftwareSerial s(5, 4); // TX:14, RX:15 **Pins may be changed to reflect wiring**
-                        // Using Ultimate GPS Breakout v3
+                    // Make sure pins 2 and 3 on the shield are not inserted into the Arduino
+#define s Serial1   // TX: 18, RX:19 (Connect GPS RX to 18, GPS TX to 19, VIN to 5V, GND to GND)
+                    // Using Ultimate GPS Breakout v3
                         
 //  SD Breakout Pinouts (with Arduino Mega):
 //    DI - Pin 51
@@ -123,7 +121,7 @@ HardwareSerial s = Serial1;
 //    CS - Pin 53
 
 //  GPS Declaration  //
-Adafruit_GPS GPS(&Serial1);
+Adafruit_GPS GPS(&s);
 String  gpsData;
 #define GPSECHO  false
 boolean usingInterrupt = false;
@@ -134,9 +132,6 @@ void useInterrupt(boolean);
 boolean gpsUpdates = false;
 boolean statusUpdates = false;
 boolean autoA = false, autoB = false, autoC = false, autoD = false;
-long peakAlt = 0;
-boolean descending = false;
-long descentStart = 0;
 long flightStart= 0;
 boolean activatedA = false;
 boolean activatedB = false;
@@ -172,7 +167,7 @@ void fireBurner(int burner) {
   sync_LEDs();
   delay(30000);                //  recharge capacitors for thirty seconds
   digitalWrite(burner, HIGH);  //  fire burner
-  delay(2000);                 //  wait for two seconds
+  delay(3000);                 //  wait for three seconds
   digitalWrite(burner, LOW);   //  stop burner
 }
 
@@ -184,20 +179,20 @@ void sync_LEDs(){
 }
 
 
-// Fires the burner specificed in the first argument repeatedly until the pull pin is gone
+// Fires the burner specificed in the first argument one time and then up to two more times if pull pin is still present
 void fireAutonomousBurner(int burner, int pull) {
   fireBurner(burner);
-  if(digitalRead(pull) == LOW) {
+  if(digitalRead(pull) == HIGH) {
     delay(30000);
     fireBurner(burner);
   } 
-  if(digitalRead(pull) == LOW) {
+  if(digitalRead(pull) == HIGH) {
     delay(30000);
     fireBurner(burner);
   }
 }
 
-// Flashes the arduino.s built in LED for 1.5 seconds
+// Flashes the arduino's built in LED for 1.5 seconds
 void testLED() {
   digitalWrite(led, HIGH);
   delay(1500);
@@ -212,47 +207,47 @@ String getPullStatus() {
   status += String(minutes) + ":" + String(seconds) + " ";
   if(digitalRead(pullA) == LOW){
     activatedA = false;
-    status += "AO";
+    status += "AX";
   }
   else{
     if(not activatedA){
       activateIndicatorLED("A","P");
     }
     activatedA = true;
-    status += "AX";
+    status += "AO";
   }
   if(digitalRead(pullB) == LOW){
     activatedB = false;
-    status += "BO";
+    status += "BX";
   }
   else{
     if(not activatedB){
       activateIndicatorLED("B","P");
     }
     activatedB = true;
-    status += "BX";
+    status += "BO";
   }
   if(digitalRead(pullC) == LOW){
     activatedC = false;
-    status += "CO";
+    status += "CX";
   }
   else{
     if(not activatedC){
       activateIndicatorLED("C","P");
     }
     activatedC = true;
-    status += "CX";
+    status += "CO";
   }
   if(digitalRead(pullD) == LOW){
     activatedD = false;
-    status += "DO";
+    status += "DX";
   }
   else{
     if(not activatedD){
       activateIndicatorLED("D","P");
     }
     activatedD = true;
-    status += "DX";
+    status += "DO";
   }
   return status;
 }
@@ -260,6 +255,10 @@ String getPullStatus() {
 //  Interrupt is called once a millisecond, looks for any new GPS data, and stores it  //
 SIGNAL(TIMER0_COMPA_vect) {
   char c = GPS.read();
+#ifdef UDRO      //Change made by Ben G 8/11/16 fixing interupt problem
+  if(GPSECHO)
+    if(c) UDRO = c;
+#endif
 }
 
 //  GPS interrupt function  //
@@ -349,13 +348,13 @@ void xBeeCommand() {
         sendToXbee(gpsString);
         Serial.println(gpsString);
       } 
-      else if (command == "AG1") {                         //  "AG0": Turn on automatic GPS transmission
+      else if (command == "AG1") {                         //  "AG1": Turn on automatic GPS transmission
         gpsUpdates = true;
         logData("Automatic GPS updates turned on");
         Serial.println("GPS updates ON");
         sendToXbee("GOn");
       }
-      else if (command == "AG0"){                           // "AG1": Turn off automatic GPS transmission
+      else if (command == "AG0"){                           // "AG0": Turn off automatic GPS transmission
         gpsUpdates = false;
         logData("Automatic GPS updates turned off");
         Serial.println("GPS udpates OFF");
@@ -367,60 +366,60 @@ void xBeeCommand() {
         sendToXbee(pullStatus);
         Serial.println(pullStatus);
       }
-      else if (command == "AS1") {                         //  "AS": Turn on/off automatic status transmission
+      else if (command == "AS1") {                         //  "AS1": Turn on automatic status transmission
         statusUpdates = true;
         logData("Automatic status updates turned on");
         Serial.println("Status updates ON");
         sendToXbee("SOn");
       }
-      else if(command == "AS0"){
+      else if(command == "AS0"){                          //  "AS0": Turn off automatic status transmission
         statusUpdates = false;
         logData("Automatic status updates turned off");
         sendToXbee("SOff");
       }
-      else if (command == "AA1") {                         //  "AA": Turn on/off autonomous A behavior
+      else if (command == "AA1") {                         //  "AA1": Turn on autonomous A behavior
         autoA = true;
         logData("Autonomous A behavior turned on");
         Serial.println("Autonomous A behavior ON");
         sendToXbee("AAOn");
       }
-      else if(command == "AA0"){
+      else if(command == "AA0"){                          //  "AA0": Turn off autonomous A behavior
         autoA = false;
         logData("Autonomous A behavior turned off");
         Serial.println("Autonomous A behavior OFF");
         sendToXbee("AAOff");
       }
-      else if (command == "AB1") {                         //  "AB": Turn on/off autonomous B behavior
+      else if (command == "AB1") {                         //  "AB1": Turn on/off autonomous B behavior
         autoB = true;
         logData("Autonomous B behavior turned on");
         Serial.println("Autonomous B behavior ON");
         sendToXbee("ABOn");
       }
-      else if(command == "AB0") {
+      else if(command == "AB0") {                         //  "AB0": Turn off autonomous B behavior
         autoB = false;
         logData("Autonomous B behavior turned off");
         Serial.println("Autonomous B behavior OFF");
         sendToXbee("ABOff");
       }
-      else if (command == "AC1") {                         //  "AC": Turn on/off autonomous behavior
+      else if (command == "AC1") {                         //  "AC1": Turn on autonomous C behavior
         autoC = true;
         logData("Autonomous C behavior turned on");
         Serial.println("Autonomous C behavior ON");
         sendToXbee("ACOn");
       }
-      else if(command == "AC0"){
+      else if(command == "AC0"){                         //  "AC0": Turn off autonomous C behavior
         autoC = false;
         logData("Autonomous C behavior turned off");
         Serial.println("Autonomous C behavior OFF");
         sendToXbee("ACOff");
       }
-      else if (command == "AD1") {                         //  "AD": Turn on/off autonomous behavior
+      else if (command == "AD1") {                         //  "AD1": Turn on autonomous D behavior
         autoD = true;
         logData("Autonomous D behavior turned on");
         Serial.println("Autonomous D behavior ON");
         sendToXbee("ADOn");
       }
-      else if(command == "AD0"){
+      else if(command == "AD0"){                         //  "AD0": Turn off autonomous D behavior
         autoD = false;
         logData("Autonomous D behavior turned off");
         Serial.println("Autonomous D behavior OFF");
@@ -446,7 +445,7 @@ void xBeeCommand() {
         Serial.println("Burned all modules");
         sendToXbee("BAll OK");
       }
-      else if (command == "RT"){
+      else if (command == "RT"){                        // "RT": Reset flight timer
         logData("Commanded to Reset Flight Timer");
         resetFlightTimer();
         sendToXbee("Flight Timer Reset");
@@ -529,54 +528,6 @@ void activateIndicatorLED(String arg1,String arg2){
       burnerDLED.pulled();
     }
   }
-}
-
-void setup () {
-  //  Initialize Burners  //
-    pinMode(burnerA, OUTPUT);
-    pinMode(burnerB, OUTPUT);
-    pinMode(burnerC, OUTPUT);
-    pinMode(burnerD, OUTPUT);
-
-    pinMode(led, OUTPUT); // initialize LED for testing
-
-  //  Initialize Pulls  //
-    pinMode(pullA, INPUT);
-    pinMode(pullB, INPUT);
-    pinMode(pullC, INPUT);
-    pinMode(pullD, INPUT);
-
-  //  Initialize Serials  //
-  Serial.begin(9600);
-  while (!Serial){;}      //  wait for serial port to connect
-  xBee.begin(xbeeBaud);
-  GPS.begin(gpsBaud);
-
-  //  SD Data Log Setup //
-  Serial.print("Initializing SD card...");
-  if (!SD.begin(chipSelect)) {    //  Check if SD card is present
-    Serial.println("Card failed, or not present");
-    return;
-  }
-  Serial.println("Card initialized");
-  File logFile = SD.open("MC-LOG.txt", FILE_WRITE);
-  if (logFile) {
-    logFile.println("Multi-cut Box Data Log:\n");
-    logFile.close();
-  }
-  else {
-    Serial.println("Error opening MC-LOG.txt");
-  }
-  
-  //  GPS Setup //
-  GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA); //  selects data type to recieve
-  GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);    //  sets update rate
-  GPS.sendCommand(PGCMD_ANTENNA);               //  updates antenna status
-  useInterrupt(true);
-  delay(1000);
-  s.println(PMTK_Q_RELEASE);
-
-  resetFlightTimer();                            // Get the flightTimer reset before starting the loop to account for how long the setup takes
 }
 
 void indicateWithLEDs(){
@@ -691,35 +642,79 @@ void indicateWithLEDs(){
   }
 }
 
+void setup () {
+  //  Initialize Burners  //
+    pinMode(burnerA, OUTPUT);
+    pinMode(burnerB, OUTPUT);
+    pinMode(burnerC, OUTPUT);
+    pinMode(burnerD, OUTPUT);
+
+    pinMode(led, OUTPUT); // initialize LED for testing
+
+  //  Initialize Pulls  //
+    pinMode(pullA, INPUT);
+    pinMode(pullB, INPUT);
+    pinMode(pullC, INPUT);
+    pinMode(pullD, INPUT);
+
+  //  Initialize Serials  //
+  Serial.begin(9600);
+  while (!Serial){;}      //  wait for serial port to connect
+  xBee.begin(xbeeBaud);
+  GPS.begin(gpsBaud);
+
+  //  SD Data Log Setup //
+  Serial.print("Initializing SD card...");
+  if (!SD.begin(chipSelect)) {    //  Check if SD card is present
+    Serial.println("Card failed, or not present");
+    return;
+  }
+  Serial.println("Card initialized");
+  File logFile = SD.open("MC-LOG.txt", FILE_WRITE);
+  if (logFile) {
+    logFile.println("Multi-cut Box Data Log:\n");
+    logFile.close();
+  }
+  else {
+    Serial.println("Error opening MC-LOG.txt");
+  }
+  
+  //  GPS Setup //
+  GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA); //  selects data type to recieve
+  GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);    //  sets update rate
+  GPS.sendCommand(PGCMD_ANTENNA);               //  updates antenna status
+  useInterrupt(true);
+  delay(1000);
+  s.println(PMTK_Q_RELEASE);
+
+  resetFlightTimer();                            // Get the flightTimer reset before starting the loop to account for how long the setup takes
+}
+
 void loop (){
   indicateWithLEDs();                            // Blink the status of the LEDs
-  logData(getGPS());                          // Log the GPS data
-  getPullStatus();
+  logData(getGPS());                             // Log the GPS data
+  logData(getPullStatus());                      // Log pull status
   
-  xBeeCommand();                              //  respond to XBee commands if any
-  
+  xBeeCommand();                                 //  respond to XBee commands if any
+
+
+  //  Update GPS  //
   if (GPS.newNMEAreceived())
   {
-    if (!GPS.parse(GPS.lastNMEA())){           //  update GPS
+    if (!GPS.parse(GPS.lastNMEA())){           
       return;
-    }
-    if (gpsUpdates && ((millis()/1000)-flightStart)%30 == 0) {                       //  transmit GPS automatically if turned on
-    sendToXbee(getGPS());
     }
   }
 
-  if(statusUpdates && ((millis()/1000)-flightStart)%60==0) {    //  transmit pull pin status by minute if turned on
+  if (gpsUpdates && ((millis()/1000)-flightStart)%30 == 0) {                    //  transmit GPS every 30 seconds if turned on
+    sendToXbee(getGPS());
+  }
+
+  if(statusUpdates && ((millis()/1000)-flightStart)%60==0) {                    //  transmit pull pin status every minute if turned on
     sendToXbee(getPullStatus());
   }
 
-  if(GPS.altitude>peakAlt){                                     // Determines the peak altitude of the flight
-    peakAlt = GPS.altitude;
-  }
-  if(GPS.altitude != 0 && GPS.altitude<peakAlt-100){            //  if altitude is over 100ft less than the peak altitude, payload is declared descending
-    descending = true;
-    descentStart = millis()/1000;
-  }
-  
+
   //  Autonomous Behavior //
   if(autoA) {                                          //  Module A
     if(burnAAlt != 0){
@@ -772,7 +767,7 @@ void loop (){
     }
     if(burnDTime != 0){
       if(((millis()/1000)-flightStart) >= burnDTime) {
-        fireAutonomousBurner(burnerD,pullD);     //  time descending cutdown(5 min), timer cutdown (120 min)
+        fireAutonomousBurner(burnerD,pullD);
         autoD = false;
       }
     }
