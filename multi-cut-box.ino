@@ -1,4 +1,4 @@
-//  Multi-Cut Box current implementation as of 6/6/16 *Updated 8/11/16*
+//  Multi-Cut Box current implementation as of 6/6/16 *Updated 8/12/16*
 //  By Noah Biniek (binie005@umn.edu)
 #include <AltSoftSerial.h>
 #include <SPI.h>
@@ -145,6 +145,7 @@ boolean flash2 = true;
 boolean pull = false;
 boolean resetTimeCheck = false;
 boolean on = true;
+unsigned long burnertimer = 0;
 
   // Initialize LEDs    //
 IndicatorLED burnerALED(33);
@@ -161,14 +162,26 @@ void logData(String text) {
   }
 }
 
-// Fires the burner specified in the argument
-void fireBurner(int burner) {
-  logData("Firing Burner " + (String)burner);
+// Fires the burner specified in the argument   **Added timer to check the time between
+void fireBurner(int burner) {                 //burns.  Code won't wait 30 seconds 
+  logData("Firing Burner " + (String)burner); //everytime anymore.**
   sync_LEDs();
-  delay(30000);                //  recharge capacitors for thirty seconds
-  digitalWrite(burner, HIGH);  //  fire burner
-  delay(3000);                 //  wait for three seconds
-  digitalWrite(burner, LOW);   //  stop burner
+  unsigned long diff, temp;
+  diff = millis() - burnertimer;
+  if(diff > 30000)
+  {
+    digitalWrite(burner, HIGH);  //  fire burner
+    delay(3000);                 //  wait for three seconds
+    digitalWrite(burner, LOW);   //  stop burner
+  }
+  else
+  {
+    delay(30000 - diff);
+    digitalWrite(burner, HIGH);  //  fire burner
+    delay(3000);                 //  wait for three seconds
+    digitalWrite(burner, LOW);   //  stop burner
+  }
+  burnertimer = millis();
 }
 
 void sync_LEDs(){
@@ -183,11 +196,9 @@ void sync_LEDs(){
 void fireAutonomousBurner(int burner, int pull) {
   fireBurner(burner);
   if(digitalRead(pull) == HIGH) {
-    delay(30000);
     fireBurner(burner);
   } 
   if(digitalRead(pull) == HIGH) {
-    delay(30000);
     fireBurner(burner);
   }
 }
@@ -308,7 +319,7 @@ void xBeeCommand() {
       logData("Command: " + command + " acknowledged");
       if (command == "BA") {                                //  "BA": Burn A
         logData("Commanded to Burn A");
-        Serial.println("Burning A in thirty seconds");
+        //Serial.println("Burning A in thirty seconds");
         testLED();
         fireBurner(burnerA);
         activateIndicatorLED("A","B");   // Turn on the indicator light
@@ -317,7 +328,7 @@ void xBeeCommand() {
       }
       else if (command == "BB") {                         //  "BB": Burn B
         logData("Commanded to Burn B");
-        Serial.println("Burning B in thirty seconds");
+        //Serial.println("Burning B in thirty seconds");
         testLED();
         fireBurner(burnerB);
         activateIndicatorLED("B","B");   // Turn on the indicator light
@@ -326,7 +337,7 @@ void xBeeCommand() {
       } 
       else if (command == "BC") {                         //  "BC": Burn C
         logData("Commanded to Burn C");
-        Serial.println("Burning C in thirty seconds");
+        //Serial.println("Burning C in thirty seconds");
         testLED();
         fireBurner(burnerC);
         activateIndicatorLED("C","B");   // Turn on the indicator light
@@ -335,7 +346,7 @@ void xBeeCommand() {
       } 
       else if (command == "BD") {                         //  "BD": Burn D
         logData("Commanded to Burn D");
-        Serial.println("Burning D in thirty seconds");
+        //Serial.println("Burning D in thirty seconds");
         testLED();
         fireBurner(burnerD);
         activateIndicatorLED("D","B");   // Turn on the indicator light
@@ -436,10 +447,13 @@ void xBeeCommand() {
         Serial.println("Burning all modules");
         fireBurner(burnerA);
         Serial.println("Burned A");
+        delay(30000);
         fireBurner(burnerB);
         Serial.println("Burned B");
+        delay(30000);
         fireBurner(burnerC);
         Serial.println("Burned C");
+        delay(30000);
         fireBurner(burnerD);
         Serial.println("Burned D");
         Serial.println("Burned all modules");
