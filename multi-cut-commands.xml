@@ -20,26 +20,47 @@
     <packet name="Transmit GPS Data">
       <payload>4D433F544721</payload>
     </packet>
-    <packet name="Turn On/Off Automatic GPS Updates">
-      <payload>4D433F414721</payload>
+    <packet name="Turn On Automatic GPS Updates">
+      <payload>4D433F41473121</payload>
+    </packet>
+    <packet name="Turn Off Automatic GPS Updates">
+      <payload>4D433F41473021</payload>
     </packet>
     <packet name="Transmit Pull Status">
       <payload>4D433F545021</payload>
     </packet>
-    <packet name="Turn On/Off Automatic Status Transmission">
-      <payload>4D433F415321</payload>
+    <packet name="Turn On Automatic Status Transmission">
+      <payload>4D433F41533121</payload>
     </packet>
-    <packet name="Turn On/Off Autonomous A Behavior">
-      <payload>4D433F414121</payload>
+    <packet name="Turn Off Automatic Status Transmission">
+      <payload>4D433F41533021</payload>
     </packet>
-    <packet name="Turn On/Off Autonomous B Behavior">
-      <payload>4D433F414221</payload>
+    <packet name="Reset Flight Timer">
+      <payload>4D433F525421</payload>
     </packet>
-    <packet name="Turn On/Off Autonomous C Behavior">
-      <payload>4D433F414321</payload>
+    <packet name="Turn On Autonomous A Behavior">
+      <payload>4D433F41413121</payload>
     </packet>
-    <packet name="Turn On/Off Autonomous D Behavior">
-      <payload>4D433F414421</payload>
+    <packet name="Turn Off Autonomous A Behavior">
+      <payload>4D433F41413021</payload>
+    </packet>
+    <packet name="Turn On Autonomous B Behavior">
+      <payload>4D433F41423121</payload>
+    </packet>
+    <packet name="Turn Off Autonomous B Behavior">
+      <payload>4D433F41423021</payload>
+    </packet>
+    <packet name="Turn On Autonomous C Behavior">
+      <payload>4D433F41433121</payload>
+    </packet>
+    <packet name="Turn Off Autonomous C Behavior">
+      <payload>4D433F41433021</payload>
+    </packet>
+    <packet name="Turn On Autonomous D Behavior">
+      <payload>4D433F41443121</payload>
+    </packet>
+    <packet name="Turn Off Autonomous D Behavior">
+      <payload>4D433F41443021</payload>
     </packet>
     <packet name="Test LED">
       <payload>4D433F544C21</payload>
