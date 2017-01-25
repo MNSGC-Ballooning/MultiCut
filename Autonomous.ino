@@ -3,16 +3,16 @@
 boolean autoA = false, autoB = false, autoC = false, autoD = false;
 
 // At a certain altitude, burn specific payloads
-long burnAAlt = 40000;         // Burn A at this altitude (in meters, 0 for never)
-long burnBAlt = 55000;         // Burn B at this altitude (in meters, 0 for never)
-long burnCAlt = 80000;         // Burn C at this altitude (in meters, 0 for never)
+long burnAAlt = 0;         // Burn A at this altitude (in meters, 0 for never)
+long burnBAlt = 0;         // Burn B at this altitude (in meters, 0 for never)
+long burnCAlt = 0;         // Burn C at this altitude (in meters, 0 for never)
 long burnDAlt = 0;             // Burn D at this altitude (in meters, 0 for never)
 
 // After a certain amount of time (from start of flight), burn specific payloads
-long burnATime = 30;           // Burn A after this much time has elapsed (in seconds, 0 for never)
-long burnBTime = 3900;         // Burn B after this much time has elapsed (in seconds, 0 for never)
-long burnCTime = 5400;         // Burn C after this much time has elapsed (in seconds, 0 for never)
-long burnDTime = 7200;         // Burn D after this much time has elapsed (in seconds, 0 for never)
+long burnATime = 10;           // Burn A after this much time has elapsed (in seconds, 0 for never)
+long burnBTime = 15;         // Burn B after this much time has elapsed (in seconds, 0 for never)
+long burnCTime = 20;         // Burn C after this much time has elapsed (in seconds, 0 for never)
+long burnDTime = 25;         // Burn D after this much time has elapsed (in seconds, 0 for never)
 
 //============================================================================================================================
 
