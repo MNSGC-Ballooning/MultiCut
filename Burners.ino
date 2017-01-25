@@ -30,14 +30,14 @@ void fireBurner(int burner) {
 // Fires the burner specificed in the first argument one time and then up to two more times if pull pin is still present
 void fireAutonomousBurner(int burner, int pull) {
   fireBurner(burner);
-  delay(1000);
+  /*delay(1000);
   if(digitalRead(pull) == HIGH) {
     fireBurner(burner);
     delay(1000);
   } 
   if(digitalRead(pull) == HIGH) {
     fireBurner(burner);
-  }
+  }*/
 }
 
 //  Return status string: "minutes:seconds A?B?C?D?" (where '?' will be O if pull is present or X if not present)
