@@ -37,7 +37,7 @@ AltSoftSerial xBee;
 File datalog, eventlog;
 char datafile[13], eventfile[13];
 
-String filename = "MCut";
+String filename = "MCut-Hardware Demo";
 
 boolean startup = true;
 unsigned long flightStart = 0;
