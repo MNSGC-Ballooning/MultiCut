@@ -1,0 +1,30 @@
+void setup() {
+  #define burnerA 9
+  #define burnerB 5
+  #define burnerC 7
+  #define burnerD 11
+
+}
+
+void loop() {
+    delay(5000);
+    digitalWrite(burnerA, HIGH);  //  fire burner
+    delay(3000);                 //  wait for three seconds
+    digitalWrite(burnerA, LOW);   //  stop burner
+
+    delay(5000);
+    digitalWrite(burnerB, HIGH);  //  fire burner
+    delay(3000);                 //  wait for three seconds
+    digitalWrite(burnerB, LOW);   //  stop burner
+
+    delay(5000);
+    digitalWrite(burnerC, HIGH);  //  fire burner
+    delay(3000);                 //  wait for three seconds
+    digitalWrite(burnerC, LOW);   //  stop burner
+
+    delay(5000);
+    digitalWrite(burnerD, HIGH);  //  fire burner
+    delay(3000);                 //  wait for three seconds
+    digitalWrite(burnerD, LOW);   //  stop burner
+
+}
